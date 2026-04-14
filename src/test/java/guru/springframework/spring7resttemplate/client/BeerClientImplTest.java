@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 public class BeerClientImplTest {
     @Autowired
-    BeerClientImpl beerClient;
+    BeerClientImpl beerClient; 
 
     @Test
     void testListBeers() {

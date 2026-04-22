@@ -78,7 +78,7 @@ public class BeerClientImplTest {
 
     @Test
     void testGetBeerById(){
-        Page<BeerDTO> beerDTOs=beerClient.listBeers(null);
+        Page<BeerDTO> beerDTOs=beerClient.listBeers();
 
         BeerDTO dto=beerDTOs.getContent().get(0);
 
@@ -89,11 +89,11 @@ public class BeerClientImplTest {
 
     @Test
     void testListBeersNoBeerName() {
-        beerClient.listBeers(null);
+        beerClient.listBeers();
     }
 
     @Test
     void testListBeers() {
-        beerClient.listBeers("ALE");
+        beerClient.listBeers("ALE", null, null, null, null);
     }
 }

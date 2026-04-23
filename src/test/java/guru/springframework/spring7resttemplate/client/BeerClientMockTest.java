@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -35,12 +36,15 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.queryParam;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestToUriTemplate;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withAccepted;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withNoContent;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withResourceNotFound;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 @RestClientTest
@@ -77,8 +81,50 @@ public class BeerClientMockTest {
     }
 
     @Test
+    void testListBeersWithQueryParam() throws JacksonException{
+        String response=objectMapper.writeValueAsString(getPage());
+
+        URI uri=UriComponentsBuilder.fromUriString(URL+BeerClientImpl.GET_BEER_PATH)
+                                        .queryParam("beerName", "ALE")
+                                        .build().toUri();
+
+        server.expect(method(HttpMethod.GET))
+                .andExpect(requestTo(uri))
+                .andExpect(queryParam("beerName", "ALE"))
+                .andRespond(withSuccess(response, MediaType.APPLICATION_JSON));
+
+        Page<BeerDTO> responsePage=beerClient.listBeers("ALE", null, null, null, null);
+
+        assertThat(responsePage.getContent().size()).isEqualTo(1);
+
+    }
+
+    @Test
+    void testDeleteNotFound(){
+        server.expect(method(HttpMethod.DELETE))
+                .andExpect(requestToUriTemplate(URL+BeerClientImpl.GET_BEER_BY_ID_PATH, dto.getId()))
+                .andRespond(withResourceNotFound());
+
+        assertThrows(HttpClientErrorException.class, ()->{
+            beerClient.deleteBeer(dto.getId());
+        });
+
+        server.verify();
+    }
+
+    @Test
+    void testDeleteBeer(){
+        server.expect(method(HttpMethod.DELETE))
+                .andExpect(requestToUriTemplate(URL+BeerClientImpl.GET_BEER_BY_ID_PATH, dto.getId()))
+                .andRespond(withNoContent());
+
+        beerClient.deleteBeer(dto.getId());
+
+        server.verify();
+    }
+
+    @Test
     void testUpdateBeer(){
-        URI uri=UriComponentsBuilder.fromPath(BeerClientImpl.GET_BEER_BY_ID_PATH).build(dto.getId());
 
         server.expect(method(HttpMethod.PUT))
                 .andExpect(requestToUriTemplate(URL+BeerClientImpl.GET_BEER_BY_ID_PATH, dto.getId()))
